@@ -29,13 +29,7 @@
       this.type = 'windows';
     }
     else if (UA.match(/iPhone|iPod/i) !== null || (UA.match(/iPad/) && this.options.iOSUniversalApp)) {
-      if (UA.match(/Safari/i) !== null &&
-          (UA.match(/CriOS/i) !== null ||
-           UA.match(/FxiOS/i) != null ||
-            window.Number(UA.substr(UA.indexOf('OS ') + 3, 3).replace('_', '.')) < 6)) {
-        // Check webview and native smart banner support (iOS 6+).
-        this.type = 'ios';
-      }
+      this.type = 'ios';
     }
     else if (UA.match(/\bSilk\/(.*\bMobile Safari\b)?/) || UA.match(/\bKF\w/) || UA.match('Kindle Fire')) {
       this.type = 'kindle';
@@ -52,6 +46,7 @@
     if (this.scale < 1) {
       this.scale = 1;
     }
+
     // Get info from meta data.
     var meta = $(
       this.type == 'android'
@@ -65,27 +60,32 @@
           )
     );
 
-    if (!meta.length) {
-      return;
-    }
-    // For Windows Store apps, get the PackageFamilyName for protocol launch.
-    if (this.type == 'windows') {
-      if (isEdge) {
-        this.appId = $('meta[name="msApplication-PackageEdgeName"]').attr('content');
-      }
-      if (!this.appId) {
-        this.appId = $('meta[name="msApplication-PackageFamilyName"]').attr('content');
-      }
-    }
-    else {
-      // Try to pull the appId out of the meta tag and store the result.
-      var parsedMetaContent = /app-id=([^\s,]+)/.exec(meta.attr('content'));
-      if (parsedMetaContent) {
-        this.appId = parsedMetaContent[1];
-      } else {
+    if (this.options.appId[this.type]) {
+      this.appId = this.options.appId[this.type];
+    } else {
+      if (!meta.length) {
         return;
       }
+
+      // For Windows Store apps, get the PackageFamilyName for protocol launch.
+      if (this.type == 'windows') {
+        if (isEdge) {
+          this.appId = $('meta[name="msApplication-PackageEdgeName"]').attr('content');
+        }
+        if (!this.appId) {
+          this.appId = $('meta[name="msApplication-PackageFamilyName"]').attr('content');
+        }
+      } else {
+        // Try to pull the appId out of the meta tag and store the result.
+        var parsedMetaContent = /app-id=([^\s,]+)/.exec(meta.attr('content'));
+        if (parsedMetaContent) {
+          this.appId = parsedMetaContent[1];
+        } else {
+          return;
+        }
+      }
     }
+
     this.title = this.options.title
       ? this.options.title
       : (meta.data('title') || $('title').text().replace(/\s*[|\-·].*$/, ''));
